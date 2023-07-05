@@ -105,6 +105,9 @@ func (state *Coordinator) clusterSetup() *cluster.Cluster {
 
 func (state *Coordinator) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
+	case *actor.Restarting:
+		time.Sleep(3 * time.Second)
+		state.cluster = state.clusterSetup()
 	case pidsDtos:
 		if msg.initPID == nil {
 		}
