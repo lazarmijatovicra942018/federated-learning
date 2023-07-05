@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	console "github.com/asynkron/goconsole"
 	"github.com/asynkron/protoactor-go/actor"
 	"github.com/asynkron/protoactor-go/cluster"
+	"github.com/asynkron/protoactor-go/cluster/clusterproviders/automanaged"
+	"github.com/asynkron/protoactor-go/cluster/identitylookup/disthash"
+	"github.com/asynkron/protoactor-go/remote"
 )
 
 var sys *actor.ActorSystem = nil
@@ -82,6 +86,23 @@ func newLoggerActor() actor.Actor {
 	return &Logger{}
 }
 
+// change ip address of computer and turn of firewall
+func (state *Coordinator) clusterSetup() *cluster.Cluster {
+	config := remote.Configure("127.0.0.1", 8080)
+	provider := automanaged.NewWithConfig(1*time.Second, 6331, "127.0.0.1:6331")
+	lookup := disthash.New()
+	clusterKind := cluster.NewKind(
+		"CoordinatorCluster",
+		actor.PropsFromProducer(func() actor.Actor {
+			return state
+		}))
+	clusterConfig := cluster.Configure("cluster-coordinator", provider, lookup, config, cluster.WithKinds(clusterKind))
+	c := cluster.New(sys, clusterConfig)
+	state.cluster.StartMember()
+	defer state.cluster.Shutdown(false)
+	return c
+}
+
 func (state *Coordinator) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case pidsDtos:
@@ -92,6 +113,7 @@ func (state *Coordinator) Receive(context actor.Context) {
 		state.loggerPID = msg.loggerPID
 		state.aggregatorPID = msg.aggregatorPID
 
+		state.cluster = state.clusterSetup()
 	}
 }
 
