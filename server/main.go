@@ -63,9 +63,9 @@ func (state *Initializer) Receive(context actor.Context) {
 		state.loggerPID = loggerPID
 		state.coordinatorPID = coorditatorPID
 
-		context.Send(loggerPID, pidsDtos{initPID: state.pid, loggerPID: loggerPID})
+		context.Send(loggerPID, pidsDtos{initPID: state.pid, loggerPID: loggerPID, aggregatorPID: aggregatorPID, coordinatorPID: coorditatorPID})
 		context.Send(coorditatorPID, pidsDtos{initPID: state.pid, coordinatorPID: coorditatorPID, loggerPID: loggerPID, aggregatorPID: aggregatorPID})
-		context.Send(aggregatorPID, pidsDtos{initPID: state.pid, aggregatorPID: aggregatorPID})
+		context.Send(aggregatorPID, pidsDtos{initPID: state.pid, aggregatorPID: aggregatorPID, loggerPID: loggerPID, coordinatorPID: coorditatorPID})
 
 	}
 }
@@ -87,9 +87,9 @@ func newLoggerActor() actor.Actor {
 }
 
 // change ip address of computer and turn of firewall
-func (state *Coordinator) clusterSetup() *cluster.Cluster {
-	config := remote.Configure("127.0.0.1", 8080)
-	provider := automanaged.NewWithConfig(1*time.Second, 6331, "127.0.0.1:6331")
+func (state *Coordinator) clusterSetup(context actor.Context) *cluster.Cluster {
+	config := remote.Configure("192.168.1.8", 8080)
+	provider := automanaged.NewWithConfig(1*time.Second, 6331, "192.168.1.8:6331")
 	lookup := disthash.New()
 	clusterKind := cluster.NewKind(
 		"CoordinatorCluster",
@@ -98,16 +98,16 @@ func (state *Coordinator) clusterSetup() *cluster.Cluster {
 		}))
 	clusterConfig := cluster.Configure("cluster-coordinator", provider, lookup, config, cluster.WithKinds(clusterKind))
 	c := cluster.New(sys, clusterConfig)
-	state.cluster.StartMember()
-	defer state.cluster.Shutdown(false)
+	state.cluster = c
+
 	return c
 }
 
 func (state *Coordinator) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
-	case *actor.Restarting:
+	case *actor.Restart:
 		time.Sleep(3 * time.Second)
-		state.cluster = state.clusterSetup()
+		state.cluster = state.clusterSetup(context)
 	case pidsDtos:
 		if msg.initPID == nil {
 		}
@@ -116,7 +116,8 @@ func (state *Coordinator) Receive(context actor.Context) {
 		state.loggerPID = msg.loggerPID
 		state.aggregatorPID = msg.aggregatorPID
 
-		state.cluster = state.clusterSetup()
+		state.cluster = state.clusterSetup(context)
+		state.cluster.StartMember()
 	}
 }
 
@@ -145,7 +146,7 @@ func (state *Aggregator) Receive(context actor.Context) {
 }
 
 func main() {
-	sys := actor.NewActorSystem()
+	sys = actor.NewActorSystem()
 	decider := func(reason interface{}) actor.Directive {
 		fmt.Println("handling failure for child")
 		return actor.RestartDirective
