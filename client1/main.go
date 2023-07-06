@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"reflect"
 	"time"
 
 	"github.com/asynkron/protoactor-go/actor"
@@ -24,7 +23,16 @@ var sys *actor.ActorSystem = nil
 
 type clientActor struct {
 	system  *actor.ActorSystem
-	weights []uint8
+	weights [][]float64
+}
+
+type DTO struct {
+	Layer1WeightsMatrix [][]float64 `json:"layer1_weights_matrix"`
+	Bias1               []float64   `json:"bias1"`
+	Layer2WeightsMatrix [][]float64 `json:"layer2_weights_matrix"`
+	Bias2               []float64   `json:"bias2"`
+	Layer3WeightsMatrix [][]float64 `json:"layer3_weights_matrix"`
+	Bias3               []float64   `json:"bias3"`
 }
 
 func (p *clientActor) Receive(ctx actor.Context) {
@@ -38,27 +46,59 @@ func (p *clientActor) Receive(ctx actor.Context) {
 		}
 		defer resp.Body.Close()
 
-		// Read the response body
+		fmt.Println(resp.Body)
+
 		body, err := ioutil.ReadAll(resp.Body)
+
 		if err != nil {
 			fmt.Println("Error:", err)
 			return
 		}
 
-		// Print the response
-
-		variableType := reflect.TypeOf(body)
-
-		fmt.Println(variableType)
-
-		var w []uint8
-		err = json.Unmarshal(body, &w)
+		var dto DTO
+		err = json.Unmarshal(body, &dto)
 		if err != nil {
-			fmt.Println("\n\n\n\n\n\nError:", err)
+			fmt.Printf("Failed to deserialize the response body: %s\n", err)
 			return
 		}
-		// Print the weights
-		fmt.Println(w)
+
+		// Now you can access the DTO object in Go
+
+		/*
+			layer1WeightsMatrix := dto.Layer1WeightsMatrix
+			bias1 := dto.Bias1
+			layer2WeightsMatrix := dto.Layer2WeightsMatrix
+			bias2 := dto.Bias2
+			layer3WeightsMatrix := dto.Layer3WeightsMatrix
+			bias3 := dto.Bias3
+		*/
+		// Now you can work with each field as needed
+		//fmt.Println("Layer 1 Weights Matrix:", layer1WeightsMatrix)
+		/*	fmt.Println("Bias 1:", bias1)
+			fmt.Println("Layer 2 Weights Matrix:", layer2WeightsMatrix)
+			fmt.Println("Bias 2:", bias2)
+			fmt.Println("Layer 3 Weights Matrix:", layer3WeightsMatrix)
+			fmt.Println("Bias 3:", bias3)
+		*/
+
+		// Print the response
+
+		//variableType := reflect.TypeOf(body)
+
+		//fmt.Println(variableType)
+
+		//p.weights = body
+		/*
+			var w []float64
+
+			err = json.Unmarshal(string(body), &w)
+			if err != nil {
+					fmt.Println("\n\n\n\n\n\nError:", err)
+					return
+			}
+				// Print the weights
+			fmt.Println(w)
+		*/
 		/*
 			mess := &messages.ClientMessage{
 					weights : body

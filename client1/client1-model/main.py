@@ -8,7 +8,35 @@ import jsonpickle
 import numpy as np
 
 
+
+class Response:
+    def __init__(self):
+        self.list1 = []
+
+    def add_to_list1(self, item):
+        self.list1.append(item)
+
+    def set_list1(self, list):
+        self.list1  = list
+
+
+   
+
+
+
+
+
+
+
+
+
+
+
 app = Flask(__name__)
+
+
+
+
 
 
 
@@ -70,10 +98,22 @@ def hello():
     weights = getWeights(model)
 
     #setWeights(weights)
+    
+    dto = {
+        'layer1_weights_matrix': weights[0].tolist(),
+        'bias1': weights[1].tolist(),
+        'layer2_weights_matrix': weights[2].tolist(),
+        'bias2': weights[3].tolist(),
+        'layer3_weights_matrix': weights[4].tolist(),
+        'bias3': weights[5].tolist()
+    }
+    # Return the DTO as a JSON response
+    return jsonify(dto)
+    
+   # return jsonpickle.encode([weights[0].tolist(),weights[1].tolist(),weights[2].tolist(),weights[3].tolist(),weights[4].tolist(),weights[5].tolist()])
 
-    return jsonpickle.encode([weights[0].tolist(),weights[1].tolist(),weights[2].tolist(),weights[3].tolist(),weights[4].tolist(),weights[5].tolist()])
 
-   
+
 
     
 
