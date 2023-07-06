@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+
 	"log"
 	"net/http"
 	"os"
@@ -17,13 +18,10 @@ import (
 	"github.com/asynkron/protoactor-go/remote"
 )
 
-var cnt uint64 = 0
-
 var sys *actor.ActorSystem = nil
 
 type clientActor struct {
-	system  *actor.ActorSystem
-	weights [][]float64
+	system *actor.ActorSystem
 }
 
 type DTO struct {
@@ -64,22 +62,21 @@ func (p *clientActor) Receive(ctx actor.Context) {
 
 		// Now you can access the DTO object in Go
 
-		/*
-			layer1WeightsMatrix := dto.Layer1WeightsMatrix
-			bias1 := dto.Bias1
-			layer2WeightsMatrix := dto.Layer2WeightsMatrix
-			bias2 := dto.Bias2
-			layer3WeightsMatrix := dto.Layer3WeightsMatrix
-			bias3 := dto.Bias3
-		*/
+		//layer1WeightsMatrix := dto.Layer1WeightsMatrix
+		//bias1 := dto.Bias1
+		//	layer2WeightsMatrix := dto.Layer2WeightsMatrix
+		//	bias2 := dto.Bias2
+		//	layer3WeightsMatrix := dto.Layer3WeightsMatrix
+		//bias3 := dto.Bias3
+
 		// Now you can work with each field as needed
 		//fmt.Println("Layer 1 Weights Matrix:", layer1WeightsMatrix)
-		/*	fmt.Println("Bias 1:", bias1)
-			fmt.Println("Layer 2 Weights Matrix:", layer2WeightsMatrix)
+		//fmt.Println("Bias 1:", bias1)
+		/*	fmt.Println("Layer 2 Weights Matrix:", layer2WeightsMatrix)
 			fmt.Println("Bias 2:", bias2)
 			fmt.Println("Layer 3 Weights Matrix:", layer3WeightsMatrix)
-			fmt.Println("Bias 3:", bias3)
 		*/
+		//fmt.Println("Bias 3:", bias3)
 
 		// Print the response
 
@@ -99,11 +96,15 @@ func (p *clientActor) Receive(ctx actor.Context) {
 				// Print the weights
 			fmt.Println(w)
 		*/
-		/*
-			mess := &messages.ClientMessage{
-					weights : body
 
-			}*/
+		mess := &messages.DTO{
+			layer1_weights_matrix: dto.Layer1WeightsMatrix,
+			bias1:                 dto.Bias1,
+			layer2_weights_matrix: dto.Layer2WeightsMatrix,
+			bias2:                 dto.Bias2,
+			layer3_weights_matrix: dto.Layer3WeightsMatrix,
+			bias3:                 dto.Bias3,
+		}
 
 		/*
 
@@ -149,8 +150,7 @@ func main() {
 	// Start a ping actor that periodically sends a "ping" payload to the "Ponger" cluster grain
 	clientProps := actor.PropsFromProducer(func() actor.Actor {
 		return &clientActor{
-			system:  sys,
-			weights: nil,
+			system: sys,
 		}
 	})
 

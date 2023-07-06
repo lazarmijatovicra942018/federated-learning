@@ -9,36 +9,7 @@ import numpy as np
 
 
 
-class Response:
-    def __init__(self):
-        self.list1 = []
-
-    def add_to_list1(self, item):
-        self.list1.append(item)
-
-    def set_list1(self, list):
-        self.list1  = list
-
-
-   
-
-
-
-
-
-
-
-
-
-
-
 app = Flask(__name__)
-
-
-
-
-
-
 
 
 
