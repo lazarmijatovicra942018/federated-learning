@@ -61,72 +61,52 @@ func (p *clientActor) Receive(ctx actor.Context) {
 			return
 		}
 
-		// Now you can access the DTO object in Go
+		var layer1WeightsMatrix []*messages.Row
 
-		//layer1WeightsMatrix := dto.Layer1WeightsMatrix
-		//bias1 := dto.Bias1
-		//	layer2WeightsMatrix := dto.Layer2WeightsMatrix
-		//	bias2 := dto.Bias2
-		//	layer3WeightsMatrix := dto.Layer3WeightsMatrix
-		//bias3 := dto.Bias3
-
-		// Now you can work with each field as needed
-		//fmt.Println("Layer 1 Weights Matrix:", layer1WeightsMatrix)
-		//fmt.Println("Bias 1:", bias1)
-		/*	fmt.Println("Layer 2 Weights Matrix:", layer2WeightsMatrix)
-			fmt.Println("Bias 2:", bias2)
-			fmt.Println("Layer 3 Weights Matrix:", layer3WeightsMatrix)
-		*/
-		//fmt.Println("Bias 3:", bias3)
-
-		// Print the response
-
-		//variableType := reflect.TypeOf(body)
-
-		//fmt.Println(variableType)
-
-		//p.weights = body
-		/*
-			var w []float64
-
-			err = json.Unmarshal(string(body), &w)
-			if err != nil {
-					fmt.Println("\n\n\n\n\n\nError:", err)
-					return
+		for i := 0; i < len(dto.Layer1WeightsMatrix); i++ {
+			row := messages.Row{
+				Values: dto.Layer1WeightsMatrix[i],
 			}
-				// Print the weights
-			fmt.Println(w)
-		*/
+			layer1WeightsMatrix = append(layer1WeightsMatrix, &row)
+		}
+
+		var layer2WeightsMatrix []*messages.Row
+
+		for i := 0; i < len(dto.Layer2WeightsMatrix); i++ {
+			row := messages.Row{
+				Values: dto.Layer2WeightsMatrix[i],
+			}
+			layer2WeightsMatrix = append(layer2WeightsMatrix, &row)
+		}
+
+		var layer3WeightsMatrix []*messages.Row
+
+		for i := 0; i < len(dto.Layer3WeightsMatrix); i++ {
+			row := messages.Row{
+				Values: dto.Layer3WeightsMatrix[i],
+			}
+			layer3WeightsMatrix = append(layer3WeightsMatrix, &row)
+		}
 
 		mess := &messages.DTO{
-			Layer1WeightsMatrix: dto.Layer1WeightsMatrix,
+			Layer1WeightsMatrix: layer1WeightsMatrix,
 			Bias1:               dto.Bias1,
-			Layer2WeightsMatrix: dto.Layer2WeightsMatrix,
+			Layer2WeightsMatrix: layer2WeightsMatrix,
 			Bias2:               dto.Bias2,
-			Layer3WeightsMatrix: dto.Layer3WeightsMatrix,
+			Layer3WeightsMatrix: layer3WeightsMatrix,
 			Bias3:               dto.Bias3,
 		}
 
-		/*
+		coordinatorPid := cluster.GetCluster(p.system).Get("client-1", "CoordinatorCluster")
 
-				grainPid := cluster.GetCluster(p.system).Get("ponger-1", "Ponger")
-				log.Print(grainPid)
-				log.Print("\n\n\n\n\n\n\n\n\n")
+		future := ctx.RequestFuture(coordinatorPid, mess, 180*time.Second)
+		result, err := future.Result()
+		if err != nil {
+			log.Print(err.Error())
+			return
+		}
+		log.Printf("Received %v", result)
 
-				future := ctx.RequestFuture(grainPid, ping, 3*time.Second)
-				result, err := future.Result()
-				if err != nil {
-					log.Print(err.Error())
-					return
-				}
-				log.Printf("Received %v", result)
-
-			case *messages.PongMessage:
-				// Never comes here.
-				// When the pong actor responds to the sender,
-				// the sender is not a ping actor but a future process.
-				log.Print("Received pong message")
-		*/
 	}
 
 }
