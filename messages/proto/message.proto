@@ -1,0 +1,27 @@
+
+syntax = "proto3";
+package messages;
+option go_package = "protoactor-go-sender-example/federated-learning/messages";
+
+
+
+message Row {
+    repeated float values = 1;
+}
+
+message DTO {
+    repeated Row layer1_weights_matrix = 1;
+    repeated float bias1 = 2;
+    repeated Row layer2_weights_matrix = 3;
+    repeated float bias2 = 4;
+    repeated Row layer3_weights_matrix = 5;
+    repeated float bias3 = 6;
+}
+
+
+
+
+
+service Coordinator {
+    rpc Client(DTO) returns (DTO) {}
+}
