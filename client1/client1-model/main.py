@@ -1,0 +1,83 @@
+from process import  train_or_load_gender_model , getWeights , setWeights
+import sys
+import os
+from flask import Flask , jsonify ,json
+import jsonpickle
+
+
+import numpy as np
+
+
+app = Flask(__name__)
+
+
+
+
+
+
+# Define a route and a function to handle the request
+@app.route('/get_weights')
+def hello():
+   
+
+    if len(sys.argv) > 1:
+        TRAIN_DATASET_PATH = sys.argv[1]
+    else:
+        TRAIN_DATASET_PATH = '.' + os.path.sep + 'dataset' + os.path.sep + 'train' + os.path.sep
+
+
+    labeled_gender = dict()
+
+
+    with open(TRAIN_DATASET_PATH+'train_gender.csv', 'r') as file:
+        lines = file.readlines()
+        for index, line in enumerate(lines):
+            if index > 0:
+                cols = line.replace('\n', '').split(',')
+
+                image =  cols[0].replace('\r', '')
+
+                if(len(image)==1 ):
+                    image = "00000" +image +".png"
+                if (len(image) == 2):
+                    image = "0000" + image + ".png"
+                if (image == "301"):
+                    break
+
+                if (len(image) == 3):
+                    image = "000" + image + ".png"
+
+
+
+                gender = cols[1].replace('\r', '')
+                labeled_gender[str(image)] = float(gender)
+
+
+    train_image_paths = []
+    train_gender_labels = []
+
+    for image_name in os.listdir(TRAIN_DATASET_PATH):
+
+        if '.png' in image_name:
+            train_image_paths.append(os.path.join(TRAIN_DATASET_PATH, image_name))
+            train_gender_labels.append(labeled_gender[image_name])
+            
+
+    model = train_or_load_gender_model(train_image_paths, train_gender_labels)
+    
+
+
+    weights = getWeights(model)
+
+    #setWeights(weights)
+
+    return jsonpickle.encode([weights[0].tolist(),weights[1].tolist(),weights[2].tolist(),weights[3].tolist(),weights[4].tolist(),weights[5].tolist()])
+
+   
+
+    
+
+# Run the application if the script is executed directly
+if __name__ == '__main__':
+    app.run()
+    
