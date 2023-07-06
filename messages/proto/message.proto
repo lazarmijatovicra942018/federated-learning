@@ -5,20 +5,16 @@ option go_package = "protoactor-go-sender-example/federated-learning/messages";
 
 
 
-message Matrix {
-    repeated Row rows = 1;
-}
-
 message Row {
     repeated float values = 1;
 }
 
 message DTO {
-    repeated Matrix layer1_weights_matrix = 1;
+    repeated Row layer1_weights_matrix = 1;
     repeated float bias1 = 2;
-    repeated Matrix layer2_weights_matrix = 3;
+    repeated Row layer2_weights_matrix = 3;
     repeated float bias2 = 4;
-    repeated Matrix layer3_weights_matrix = 5;
+    repeated Row layer3_weights_matrix = 5;
     repeated float bias3 = 6;
 }
 

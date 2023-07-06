@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"federated-learning/messages"
 	"log"
 	"net/http"
 	"os"
@@ -25,12 +26,12 @@ type clientActor struct {
 }
 
 type DTO struct {
-	Layer1WeightsMatrix [][]float64 `json:"layer1_weights_matrix"`
-	Bias1               []float64   `json:"bias1"`
-	Layer2WeightsMatrix [][]float64 `json:"layer2_weights_matrix"`
-	Bias2               []float64   `json:"bias2"`
-	Layer3WeightsMatrix [][]float64 `json:"layer3_weights_matrix"`
-	Bias3               []float64   `json:"bias3"`
+	Layer1WeightsMatrix [][]float32 `json:"layer1_weights_matrix"`
+	Bias1               []float32   `json:"bias1"`
+	Layer2WeightsMatrix [][]float32 `json:"layer2_weights_matrix"`
+	Bias2               []float32   `json:"bias2"`
+	Layer3WeightsMatrix [][]float32 `json:"layer3_weights_matrix"`
+	Bias3               []float32   `json:"bias3"`
 }
 
 func (p *clientActor) Receive(ctx actor.Context) {
@@ -98,12 +99,12 @@ func (p *clientActor) Receive(ctx actor.Context) {
 		*/
 
 		mess := &messages.DTO{
-			layer1_weights_matrix: dto.Layer1WeightsMatrix,
-			bias1:                 dto.Bias1,
-			layer2_weights_matrix: dto.Layer2WeightsMatrix,
-			bias2:                 dto.Bias2,
-			layer3_weights_matrix: dto.Layer3WeightsMatrix,
-			bias3:                 dto.Bias3,
+			Layer1WeightsMatrix: dto.Layer1WeightsMatrix,
+			Bias1:               dto.Bias1,
+			Layer2WeightsMatrix: dto.Layer2WeightsMatrix,
+			Bias2:               dto.Bias2,
+			Layer3WeightsMatrix: dto.Layer3WeightsMatrix,
+			Bias3:               dto.Bias3,
 		}
 
 		/*
