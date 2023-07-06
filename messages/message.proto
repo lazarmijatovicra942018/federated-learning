@@ -1,0 +1,21 @@
+syntax = "proto3";
+package messages;
+option go_package = "protoactor-go-sender-example/federated-learning/messages";
+
+message ClientMessage {
+    repeated LayerMessage weights = 1;
+}
+
+
+message LayerMessage {
+    repeated float layer = 1;
+}
+
+message ServerMessage {
+    repeated LayerMessage weights = 1;
+}
+
+service Coordinator {
+    rpc Client(ClientMessage) returns (ServerMessage) {}
+}
+
