@@ -14,8 +14,9 @@ import (
 )
 
 var sys *actor.ActorSystem = nil
-var ip_addr_E = "192.168.1.5"
-var ip_addr_L = "192.168.0.113"
+
+// var ip_addr_ = "192.168.1.5"
+var ip_addr_E = "192.168.0.113"
 
 type (
 	Initializer struct {
