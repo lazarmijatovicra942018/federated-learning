@@ -20,6 +20,8 @@ import (
 )
 
 var sys *actor.ActorSystem = nil
+var ip_addr_E = "192.168.1.9"
+var ip_addr_L = "192.168.0.113"
 
 type clientActor struct {
 	system *actor.ActorSystem
@@ -117,10 +119,10 @@ func main() {
 
 	// Prepare a remote env that listens to 8081
 	//config := remote.Configure("127.0.0.1", 8081)
-	config := remote.Configure("192.168.0.113", 8081)
+	config := remote.Configure(ip_addr_E, 8081)
 
 	// Configure a cluster on top of the above remote env
-	clusterProvider := automanaged.NewWithConfig(1*time.Second, 6330, "192.168.0.113:6331")
+	clusterProvider := automanaged.NewWithConfig(1*time.Second, 6330, ip_addr_E+":6331")
 	lookup := disthash.New()
 	clusterConfig := cluster.Configure("cluster-coordinator", clusterProvider, lookup, config)
 	c := cluster.New(sys, clusterConfig)

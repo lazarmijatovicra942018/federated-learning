@@ -1,6 +1,7 @@
 package main
 
 import (
+	"federated-learning/messages"
 	"fmt"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 )
 
 var sys *actor.ActorSystem = nil
+var ip_addr_E = "192.168.1.5"
+var ip_addr_L = "192.168.0.113"
 
 type (
 	Initializer struct {
@@ -45,6 +48,14 @@ type (
 		coordinatorPID *actor.PID
 		loggerPID      *actor.PID
 		aggregatorPID  *actor.PID
+	}
+	DTO struct {
+		Layer1WeightsMatrix [][]float32 `json:"layer1_weights_matrix"`
+		Bias1               []float32   `json:"bias1"`
+		Layer2WeightsMatrix [][]float32 `json:"layer2_weights_matrix"`
+		Bias2               []float32   `json:"bias2"`
+		Layer3WeightsMatrix [][]float32 `json:"layer3_weights_matrix"`
+		Bias3               []float32   `json:"bias3"`
 	}
 )
 
@@ -88,8 +99,8 @@ func newLoggerActor() actor.Actor {
 
 // change ip address of computer and turn of firewall
 func (state *Coordinator) clusterSetup(context actor.Context) *cluster.Cluster {
-	config := remote.Configure("192.168.1.8", 8080)
-	provider := automanaged.NewWithConfig(1*time.Second, 6331, "192.168.1.8:6331")
+	config := remote.Configure(ip_addr_E, 8080)
+	provider := automanaged.NewWithConfig(1*time.Second, 6331, ip_addr_E+":6331")
 	lookup := disthash.New()
 	clusterKind := cluster.NewKind(
 		"CoordinatorCluster",
@@ -119,6 +130,54 @@ func (state *Coordinator) Receive(context actor.Context) {
 
 		state.cluster = state.clusterSetup(context)
 		state.cluster.StartMember()
+	case *messages.DTO:
+		fmt.Println("Received client message")
+
+		/*var layer1WeightsMatrixT [][]float32
+		for i := 0; i < len(msg.Layer1WeightsMatrix); i++ {
+			var rowT []float32
+			row := msg.Layer1WeightsMatrix[i]
+			for _, value := range row.Values {
+				floatValue := float32(value)
+				rowT = append(rowT, floatValue)
+			}
+			layer1WeightsMatrixT = append(layer1WeightsMatrixT, rowT)
+		}
+
+		var layer2WeightsMatrixT [][]float32
+		for i := 0; i < len(msg.Layer2WeightsMatrix); i++ {
+			var rowT []float32
+			row := msg.Layer2WeightsMatrix[i]
+			for _, value := range row.Values {
+				floatValue := float32(value)
+				rowT = append(rowT, floatValue)
+			}
+			layer2WeightsMatrixT = append(layer2WeightsMatrixT, rowT)
+		}
+
+		var layer3WeightsMatrixT [][]float32
+		for i := 0; i < len(msg.Layer3WeightsMatrix); i++ {
+			var rowT []float32
+			row := msg.Layer3WeightsMatrix[i]
+			for _, value := range row.Values {
+				floatValue := float32(value)
+				rowT = append(rowT, floatValue)
+			}
+			layer3WeightsMatrixT = append(layer3WeightsMatrixT, rowT)
+		}
+
+		dto := DTO{
+			Layer1WeightsMatrix: layer1WeightsMatrixT,
+			Bias1:               msg.Bias1,
+			Layer2WeightsMatrix: layer2WeightsMatrixT,
+			Bias2:               msg.Bias2,
+			Layer3WeightsMatrix: layer3WeightsMatrixT,
+			Bias3:               msg.Bias3,
+		}
+
+		//koristi kanale u agregatoru i kordinatoru
+		context.Send(state.aggregatorPID, dto)
+		*/
 	}
 }
 

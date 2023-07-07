@@ -5,6 +5,8 @@ go 1.20
 require (
 	github.com/asynkron/goconsole v0.0.0-20160504192649-bfa12eebf716
 	github.com/asynkron/protoactor-go v0.0.0-20230322053818-66c886e5c8bd
+	google.golang.org/grpc v1.52.3
+	google.golang.org/protobuf v1.28.1
 )
 
 require (
@@ -45,6 +47,4 @@ require (
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
-	google.golang.org/grpc v1.52.3 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
 )
