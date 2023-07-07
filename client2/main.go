@@ -23,6 +23,7 @@ var sys *actor.ActorSystem = nil
 
 var ip_addr_E = "192.168.1.9"
 var ip_addr_L = "192.168.0.113"
+var ip_addr_of_provider = "192.168.1.9"
 
 type clientActor struct {
 	system *actor.ActorSystem
@@ -101,7 +102,7 @@ func (p *clientActor) Receive(ctx actor.Context) {
 			Bias3:               dto.Bias3,
 		}
 
-		coordinatorPid := cluster.GetCluster(p.system).Get("client-1", "CoordinatorCluster")
+		coordinatorPid := cluster.GetCluster(p.system).Get("client-2", "CoordinatorCluster")
 
 		future := ctx.RequestFuture(coordinatorPid, mess, 180*time.Second)
 		result, err := future.Result()
@@ -124,7 +125,7 @@ func main() {
 	config := remote.Configure(ip_addr_E, 8082)
 
 	// Configure a cluster on top of the above remote env
-	clusterProvider := automanaged.NewWithConfig(1*time.Second, 6332, ip_addr_E+":6331")
+	clusterProvider := automanaged.NewWithConfig(1*time.Second, 6332, ip_addr_of_provider+":6331")
 	lookup := disthash.New()
 	clusterConfig := cluster.Configure("cluster-coordinator", clusterProvider, lookup, config)
 	c := cluster.New(sys, clusterConfig)
