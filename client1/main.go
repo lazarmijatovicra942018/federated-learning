@@ -108,8 +108,11 @@ func (p *clientActor) Receive(ctx actor.Context) {
 			log.Print(err.Error())
 			return
 		}
-		log.Printf("Received %v", result)
+		fmt.Println("Received update weights")
+		if result == nil {
+		}
 
+		//poslati zahtev modelu i setovati nove tezine
 	}
 
 }

@@ -131,9 +131,9 @@ func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO) {
 		state.clientWeights = append(state.clientWeights, data)
 		if len(state.clientWeights) == 2 {
 			//proveri da li su dva u nizu, ako jesu uradi sta treba, stavi u out i return
-
-			out <- data
-			out <- data
+			fmt.Println("obradjuje se fed avg")
+			out <- state.clientWeights[0]
+			out <- state.clientWeights[1]
 			return
 		}
 
@@ -207,16 +207,50 @@ func (state *Coordinator) Receive(context actor.Context) {
 			Bias3:               msg.Bias3,
 		}
 
-		fmt.Println(dto.Bias3, dto.Layer3WeightsMatrix)
 		state.chIn <- dto
 
 		if len(state.finalWeights.Bias1) == 0 {
 			var data DTO
 			data, _ = <-state.chOut
 			state.finalWeights = data
+			fmt.Println("Dobijanje final tezina")
 		}
 
-		context.Respond(state.finalWeights)
+		var layer1WeightsMatrixR []*messages.Row
+
+		for i := 0; i < len(state.finalWeights.Layer1WeightsMatrix); i++ {
+			row := messages.Row{
+				Values: state.finalWeights.Layer1WeightsMatrix[i],
+			}
+			layer1WeightsMatrixR = append(layer1WeightsMatrixR, &row)
+		}
+
+		var layer2WeightsMatrixR []*messages.Row
+
+		for i := 0; i < len(state.finalWeights.Layer2WeightsMatrix); i++ {
+			row := messages.Row{
+				Values: state.finalWeights.Layer2WeightsMatrix[i],
+			}
+			layer2WeightsMatrixR = append(layer2WeightsMatrixR, &row)
+		}
+
+		var layer3WeightsMatrixR []*messages.Row
+		for i := 0; i < len(state.finalWeights.Layer3WeightsMatrix); i++ {
+			row := messages.Row{
+				Values: state.finalWeights.Layer3WeightsMatrix[i],
+			}
+			layer3WeightsMatrixR = append(layer3WeightsMatrixR, &row)
+		}
+
+		response := &messages.DTO{
+			Layer1WeightsMatrix: layer1WeightsMatrixR,
+			Bias1:               state.finalWeights.Bias1,
+			Layer2WeightsMatrix: layer2WeightsMatrixR,
+			Bias2:               state.finalWeights.Bias2,
+			Layer3WeightsMatrix: layer3WeightsMatrixR,
+			Bias3:               state.finalWeights.Bias3,
+		}
+		context.Respond(response)
 	}
 }
 
