@@ -14,7 +14,7 @@ import (
 )
 
 var sys *actor.ActorSystem = nil
-var ip_addr_E = "192.168.1.5"
+var ip_addr_E = "192.168.1.9"
 var ip_addr_L = "192.168.0.113"
 
 type (
@@ -30,6 +30,9 @@ type (
 		loggerPID     *actor.PID
 		aggregatorPID *actor.PID
 		cluster       *cluster.Cluster
+		chIn          chan DTO
+		chOut         chan DTO
+		finalWeights  DTO
 	}
 	Logger struct {
 		pid            *actor.PID
@@ -42,6 +45,9 @@ type (
 		parentPID      *actor.PID
 		loggerPID      *actor.PID
 		coordinatorPID *actor.PID
+		chIn           chan DTO
+		chOut          chan DTO
+		clientWeights  []DTO
 	}
 	pidsDtos struct {
 		initPID        *actor.PID
@@ -56,6 +62,10 @@ type (
 		Bias2               []float32   `json:"bias2"`
 		Layer3WeightsMatrix [][]float32 `json:"layer3_weights_matrix"`
 		Bias3               []float32   `json:"bias3"`
+	}
+	chDtos struct {
+		chIn  chan DTO
+		chOut chan DTO
 	}
 )
 
@@ -114,6 +124,22 @@ func (state *Coordinator) clusterSetup(context actor.Context) *cluster.Cluster {
 	return c
 }
 
+func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO) {
+	for {
+		var data DTO
+		data, _ = <-in
+		state.clientWeights = append(state.clientWeights, data)
+		if len(state.clientWeights) == 2 {
+			//proveri da li su dva u nizu, ako jesu uradi sta treba, stavi u out i return
+
+			out <- data
+			out <- data
+			return
+		}
+
+	}
+}
+
 func (state *Coordinator) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case *actor.Restart:
@@ -127,13 +153,19 @@ func (state *Coordinator) Receive(context actor.Context) {
 		state.pid = msg.coordinatorPID
 		state.loggerPID = msg.loggerPID
 		state.aggregatorPID = msg.aggregatorPID
+		state.chIn = make(chan DTO)
+		state.chOut = make(chan DTO)
 
 		state.cluster = state.clusterSetup(context)
 		state.cluster.StartMember()
+		fmt.Println(len(state.finalWeights.Bias1))
+
+		context.Send(state.aggregatorPID, chDtos{chIn: state.chIn, chOut: state.chOut})
+
 	case *messages.DTO:
 		fmt.Println("Received client message")
 
-		/*var layer1WeightsMatrixT [][]float32
+		var layer1WeightsMatrixT [][]float32
 		for i := 0; i < len(msg.Layer1WeightsMatrix); i++ {
 			var rowT []float32
 			row := msg.Layer1WeightsMatrix[i]
@@ -175,9 +207,16 @@ func (state *Coordinator) Receive(context actor.Context) {
 			Bias3:               msg.Bias3,
 		}
 
-		//koristi kanale u agregatoru i kordinatoru
-		context.Send(state.aggregatorPID, dto)
-		*/
+		fmt.Println(dto.Bias3, dto.Layer3WeightsMatrix)
+		state.chIn <- dto
+
+		if len(state.finalWeights.Bias1) == 0 {
+			var data DTO
+			data, _ = <-state.chOut
+			state.finalWeights = data
+		}
+
+		context.Respond(state.finalWeights)
 	}
 }
 
@@ -202,6 +241,10 @@ func (state *Aggregator) Receive(context actor.Context) {
 		state.pid = msg.aggregatorPID
 		state.loggerPID = msg.loggerPID
 		state.coordinatorPID = msg.coordinatorPID
+	case chDtos:
+		state.chIn = msg.chIn
+		state.chOut = msg.chOut
+		go state.Funnel(msg.chIn, msg.chOut)
 	}
 }
 
