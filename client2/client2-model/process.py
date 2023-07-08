@@ -53,12 +53,13 @@ def getWeights(model):
 
 def setWeights(weights):
     try:
+        
         filename = 'model.h5'
         model = tf.keras.models.load_model(filename)
-
-        model.layers[1].set_weights([weights[0],weights[1]])
-        model.layers[2].set_weights([weights[2],weights[3]])
-        model.layers[3].set_weights([weights[4],weights[5]])
+        model.layers[1].set_weights([np.array(weights[0]),np.array(weights[1])])
+        model.layers[2].set_weights([np.array(weights[2]),np.array(weights[3])])
+        model.layers[3].set_weights([np.array(weights[4]),np.array(weights[5])])
+        
         filename = 'model.h5'
         tf.keras.models.save_model(model, filename)
 
@@ -66,6 +67,8 @@ def setWeights(weights):
     except Exception as e: 
         print(e)
         model = None
+        raise Exception(e)
+        
 
 
 

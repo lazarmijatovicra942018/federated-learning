@@ -14,6 +14,7 @@ import (
 
 	"github.com/asynkron/protoactor-go/actor"
 	"github.com/asynkron/protoactor-go/cluster"
+
 	"github.com/asynkron/protoactor-go/cluster/clusterproviders/automanaged"
 	"github.com/asynkron/protoactor-go/cluster/identitylookup/disthash"
 	"github.com/asynkron/protoactor-go/remote"
@@ -21,9 +22,11 @@ import (
 
 var sys *actor.ActorSystem = nil
 
-var ip_addr_E = "192.168.1.9"
-var ip_addr_L = "192.168.0.113"
-var ip_addr_of_provider = "192.168.1.9"
+// var ip_addr_E = "192.168.1.9"
+var ip_addr_E = "192.168.0.113"
+var ip_addr_of_provider = "192.168.0.113"
+
+//var ip_addr_of_provider = "192.168.1.9"
 
 type clientActor struct {
 	system *actor.ActorSystem
@@ -41,15 +44,12 @@ type DTO struct {
 func (p *clientActor) Receive(ctx actor.Context) {
 	switch ctx.Message().(type) {
 	case int:
-
 		resp, err := http.Get("http://localhost:5001/get_weights")
 		if err != nil {
 			fmt.Println("Error:", err)
 			return
 		}
 		defer resp.Body.Close()
-
-		fmt.Println(resp.Body)
 
 		body, err := ioutil.ReadAll(resp.Body)
 
@@ -64,6 +64,42 @@ func (p *clientActor) Receive(ctx actor.Context) {
 			fmt.Printf("Failed to deserialize the response body: %s\n", err)
 			return
 		}
+
+		//PROBA--implementirano gadjanje beka
+		/*
+
+			jsonData, err := json.Marshal(dto)
+			if err != nil {
+				log.Fatalf("Error marshaling JSON data: %s", err)
+			}
+
+			req, err := http.NewRequest("POST", "http://localhost:5001/set_weights", bytes.NewBuffer(jsonData))
+			if err != nil {
+				log.Fatalf("Error creating request: %s", err)
+				log.Println(req)
+			}
+
+			req.Header.Set("Content-Type", "application/json")
+
+			client := &http.Client{}
+			resp, err = client.Do(req)
+			if err != nil {
+				fmt.Println("Error sending request:", err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				log.Fatalf("Unexpected response status: %s", resp.Status)
+			}
+
+			log.Println("Weights set successfully")
+		*/
+		//	fmt.Println("\n\n")
+		//	fmt.Println(req)
+		//	fmt.Println("\n\n")
+
+		break
 
 		var layer1WeightsMatrix []*messages.Row
 
@@ -120,10 +156,12 @@ func (p *clientActor) Receive(ctx actor.Context) {
 
 func main() {
 	// Set up actor system
+
 	sys = actor.NewActorSystem()
 
 	// Prepare a remote env that listens to 8081
 	//config := remote.Configure("127.0.0.1", 8081)
+
 	config := remote.Configure(ip_addr_E, 8082)
 
 	// Configure a cluster on top of the above remote env
