@@ -2,14 +2,16 @@ from process import  train_or_load_gender_model , getWeights , setWeights
 import sys
 import os
 from flask import Flask , jsonify ,json ,request
-import jsonpickle
 
 
 import numpy as np
 
 
-
 app = Flask(__name__)
+
+
+
+
 
 @app.route('/set_weights', methods=['POST'])
 def set_weights():
@@ -70,8 +72,8 @@ def hello():
 
     weights = getWeights(model)
 
-    #setWeights(weights)
     
+
     dto = {
         'layer1_weights_matrix': weights[0].tolist(),
         'bias1': weights[1].tolist(),
@@ -80,15 +82,12 @@ def hello():
         'layer3_weights_matrix': weights[4].tolist(),
         'bias3': weights[5].tolist()
     }
-    # Return the DTO as a JSON response
     return jsonify(dto)
     
-   # return jsonpickle.encode([weights[0].tolist(),weights[1].tolist(),weights[2].tolist(),weights[3].tolist(),weights[4].tolist(),weights[5].tolist()])
 
 
 
 
-# Run the application if the script is executed directly
 if __name__ == '__main__':
     app.run(port=5001)
     

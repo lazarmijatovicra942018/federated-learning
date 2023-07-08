@@ -23,8 +23,6 @@ def train_or_load_gender_model(train_image_paths, train_image_labels):
     train_images = []
     
     for image_path in train_image_paths:
-        #image = load_img(image_path, target_size=(50, 50))
-       # print(image.shape)
         image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_RGB2GRAY)
         image = cv2.resize(image, (50, 50))
         image = img_to_array(image) / 255.0     
@@ -53,13 +51,12 @@ def getWeights(model):
 
 def setWeights(weights):
     try:
-        
+
         filename = 'model.h5'
         model = tf.keras.models.load_model(filename)
-        model.layers[1].set_weights([np.array(weights[0]),np.array(weights[1])])
-        model.layers[2].set_weights([np.array(weights[2]),np.array(weights[3])])
-        model.layers[3].set_weights([np.array(weights[4]),np.array(weights[5])])
-        
+        model.layers[1].set_weights([np.array(weights["layer1_weights_matrix"]),np.array(weights["bias1"])])
+        model.layers[2].set_weights([np.array(weights["layer2_weights_matrix"]),np.array(weights["bias2"])])
+        model.layers[3].set_weights([np.array(weights["layer3_weights_matrix"]),np.array(weights["bias3"])])
         filename = 'model.h5'
         tf.keras.models.save_model(model, filename)
 

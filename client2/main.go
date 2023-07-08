@@ -1,11 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"federated-learning/messages"
 	"fmt"
 	"io/ioutil"
-
-	"federated-learning/messages"
 	"log"
 	"net/http"
 	"os"
@@ -65,42 +65,6 @@ func (p *clientActor) Receive(ctx actor.Context) {
 			return
 		}
 
-		//PROBA--implementirano gadjanje beka
-		/*
-
-			jsonData, err := json.Marshal(dto)
-			if err != nil {
-				log.Fatalf("Error marshaling JSON data: %s", err)
-			}
-
-			req, err := http.NewRequest("POST", "http://localhost:5001/set_weights", bytes.NewBuffer(jsonData))
-			if err != nil {
-				log.Fatalf("Error creating request: %s", err)
-				log.Println(req)
-			}
-
-			req.Header.Set("Content-Type", "application/json")
-
-			client := &http.Client{}
-			resp, err = client.Do(req)
-			if err != nil {
-				fmt.Println("Error sending request:", err)
-				return
-			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				log.Fatalf("Unexpected response status: %s", resp.Status)
-			}
-
-			log.Println("Weights set successfully")
-		*/
-		//	fmt.Println("\n\n")
-		//	fmt.Println(req)
-		//	fmt.Println("\n\n")
-
-		break
-
 		var layer1WeightsMatrix []*messages.Row
 
 		for i := 0; i < len(dto.Layer1WeightsMatrix); i++ {
@@ -127,7 +91,6 @@ func (p *clientActor) Receive(ctx actor.Context) {
 			}
 			layer3WeightsMatrix = append(layer3WeightsMatrix, &row)
 		}
-		fmt.Println(layer3WeightsMatrix)
 
 		mess := &messages.DTO{
 			Layer1WeightsMatrix: layer1WeightsMatrix,
@@ -149,9 +112,76 @@ func (p *clientActor) Receive(ctx actor.Context) {
 		log.Printf("Received update weights")
 		if result == nil {
 		}
-		//poslati zahtev modelu i setovati nove tezine
+		resultDTO, ok := result.(*messages.DTO)
+		if !ok {
+			log.Print("Received unexpected result type")
+			return
+		}
+
+		dto = DTO{}
+
+		dto.Bias1 = resultDTO.Bias1
+		for i := 0; i < len(resultDTO.GetLayer1WeightsMatrix()); i++ {
+			row := resultDTO.GetLayer1WeightsMatrix()[i].GetValues()
+			dto.Layer1WeightsMatrix = append(dto.Layer1WeightsMatrix, row)
+
+		}
+
+		dto.Bias2 = resultDTO.Bias2
+		for i := 0; i < len(resultDTO.GetLayer2WeightsMatrix()); i++ {
+			row := resultDTO.GetLayer2WeightsMatrix()[i].GetValues()
+			dto.Layer2WeightsMatrix = append(dto.Layer2WeightsMatrix, row)
+
+		}
+
+		dto.Bias3 = resultDTO.Bias3
+		for i := 0; i < len(resultDTO.GetLayer3WeightsMatrix()); i++ {
+			row := resultDTO.GetLayer3WeightsMatrix()[i].GetValues()
+			dto.Layer3WeightsMatrix = append(dto.Layer3WeightsMatrix, row)
+
+		}
+
+		setWeights("set_weights", dto)
+
+	}
+}
+
+func setWeights(url string, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error marshaling JSON data: %s", err)
 	}
 
+	req, err := http.NewRequest("POST", "http://localhost:5001/"+url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %s", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected response status: %s", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return fmt.Errorf("Error:", err)
+
+	} else {
+		response := string(string(body))
+		fmt.Println(response)
+		fmt.Println(resp.Status)
+	}
+
+	return nil
 }
 
 func main() {
