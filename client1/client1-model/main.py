@@ -1,8 +1,10 @@
 from process import  train_or_load_gender_model , getWeights , setWeights
 import sys
 import os
-from flask import Flask , jsonify ,json
-import jsonpickle
+from flask import Flask , jsonify ,json ,request
+
+
+import numpy as np
 
 
 import numpy as np
@@ -10,6 +12,18 @@ import numpy as np
 
 
 app = Flask(__name__)
+
+
+
+@app.route('/set_weights', methods=['POST'])
+def set_weights():
+    try:
+        dto = request.json
+        setWeights(dto)
+
+        return jsonify({'message': 'Weights set successfully'})
+    except Exception as e:
+        return jsonify({'message': f'Error setting weights: {str(e)}'})
 
 
 

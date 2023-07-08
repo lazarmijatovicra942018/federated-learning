@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -115,9 +116,79 @@ func (p *clientActor) Receive(ctx actor.Context) {
 		if result == nil {
 		}
 
-		//poslati zahtev modelu i setovati nove tezine
+		if result == nil {
+		}
+		resultDTO, ok := result.(*messages.DTO)
+		if !ok {
+			log.Print("Received unexpected result type")
+			return
+		}
+
+		dto = DTO{}
+
+		dto.Bias1 = resultDTO.Bias1
+		for i := 0; i < len(resultDTO.GetLayer1WeightsMatrix()); i++ {
+			row := resultDTO.GetLayer1WeightsMatrix()[i].GetValues()
+			dto.Layer1WeightsMatrix = append(dto.Layer1WeightsMatrix, row)
+
+		}
+
+		dto.Bias2 = resultDTO.Bias2
+		for i := 0; i < len(resultDTO.GetLayer2WeightsMatrix()); i++ {
+			row := resultDTO.GetLayer2WeightsMatrix()[i].GetValues()
+			dto.Layer2WeightsMatrix = append(dto.Layer2WeightsMatrix, row)
+
+		}
+
+		dto.Bias3 = resultDTO.Bias3
+		for i := 0; i < len(resultDTO.GetLayer3WeightsMatrix()); i++ {
+			row := resultDTO.GetLayer3WeightsMatrix()[i].GetValues()
+			dto.Layer3WeightsMatrix = append(dto.Layer3WeightsMatrix, row)
+
+		}
+
+		setWeights("set_weights", dto)
+
 	}
 
+}
+
+func setWeights(url string, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error marshaling JSON data: %s", err)
+	}
+
+	req, err := http.NewRequest("POST", "http://localhost:5000/"+url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %s", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected response status: %s", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return fmt.Errorf("Error:", err)
+
+	} else {
+		response := string(string(body))
+		fmt.Println(response)
+		fmt.Println(resp.Status)
+	}
+
+	return nil
 }
 
 func main() {
