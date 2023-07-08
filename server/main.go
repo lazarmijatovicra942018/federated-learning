@@ -133,8 +133,66 @@ func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO) {
 		if len(state.clientWeights) == 2 {
 			//proveri da li su dva u nizu, ako jesu uradi sta treba, stavi u out i return
 			fmt.Println("obradjuje se fed avg")
-			out <- state.clientWeights[0]
-			out <- state.clientWeights[1]
+
+			dto1 := state.clientWeights[0]
+			dto2 := state.clientWeights[1]
+
+			var layer1WeightsMatrix [][]float32
+			for i := 0; i < len(dto1.Layer1WeightsMatrix); i++ {
+				var rowT []float32
+				for j := 0; j < len(dto1.Layer1WeightsMatrix[i]); j++ {
+					rowT = append(rowT, (dto1.Layer1WeightsMatrix[i][j]+dto2.Layer1WeightsMatrix[i][j])/2)
+
+				}
+				layer1WeightsMatrix = append(layer1WeightsMatrix, rowT)
+			}
+
+			var layer2WeightsMatrix [][]float32
+			for i := 0; i < len(dto1.Layer2WeightsMatrix); i++ {
+				var rowT []float32
+				for j := 0; j < len(dto1.Layer2WeightsMatrix[i]); j++ {
+					rowT = append(rowT, (dto1.Layer2WeightsMatrix[i][j]+dto2.Layer2WeightsMatrix[i][j])/2)
+
+				}
+				layer2WeightsMatrix = append(layer2WeightsMatrix, rowT)
+			}
+
+			var layer3WeightsMatrix [][]float32
+			for i := 0; i < len(dto1.Layer3WeightsMatrix); i++ {
+				var rowT []float32
+				for j := 0; j < len(dto1.Layer3WeightsMatrix[i]); j++ {
+					rowT = append(rowT, (dto1.Layer3WeightsMatrix[i][j]+dto2.Layer3WeightsMatrix[i][j])/2)
+
+				}
+				layer3WeightsMatrix = append(layer3WeightsMatrix, rowT)
+			}
+
+			var bias1 []float32
+			for i := 0; i < len(dto1.Bias1); i++ {
+				bias1 = append(bias1, (dto1.Bias1[i]+dto2.Bias1[i])/2)
+			}
+
+			var bias2 []float32
+			for i := 0; i < len(dto1.Bias2); i++ {
+				bias2 = append(bias2, (dto1.Bias2[i]+dto2.Bias2[i])/2)
+			}
+
+			var bias3 []float32
+			for i := 0; i < len(dto1.Bias3); i++ {
+				bias3 = append(bias3, (dto1.Bias3[i]+dto2.Bias3[i])/2)
+			}
+
+			finalDTO := DTO{
+				Bias1:               bias1,
+				Bias2:               bias2,
+				Bias3:               bias3,
+				Layer1WeightsMatrix: layer1WeightsMatrix,
+				Layer2WeightsMatrix: layer2WeightsMatrix,
+				Layer3WeightsMatrix: layer3WeightsMatrix,
+			}
+
+			out <- finalDTO
+			out <- finalDTO
 			return
 		}
 
