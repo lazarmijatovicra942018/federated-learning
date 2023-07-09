@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"federated-learning/messages"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	console "github.com/asynkron/goconsole"
@@ -40,6 +43,7 @@ type (
 		parentPID      *actor.PID
 		aggregatorPID  *actor.PID
 		coordinatorPID *actor.PID
+		writer         csv.Writer
 	}
 	Aggregator struct {
 		pid            *actor.PID
@@ -68,6 +72,11 @@ type (
 		chIn  chan DTO
 		chOut chan DTO
 	}
+	Message struct {
+		Content  string
+		DateTime time.Time
+		Role     string
+	}
 )
 
 func (state *Initializer) Receive(context actor.Context) {
@@ -88,7 +97,7 @@ func (state *Initializer) Receive(context actor.Context) {
 		context.Send(loggerPID, pidsDtos{initPID: state.pid, loggerPID: loggerPID, aggregatorPID: aggregatorPID, coordinatorPID: coorditatorPID})
 		context.Send(coorditatorPID, pidsDtos{initPID: state.pid, coordinatorPID: coorditatorPID, loggerPID: loggerPID, aggregatorPID: aggregatorPID})
 		context.Send(aggregatorPID, pidsDtos{initPID: state.pid, aggregatorPID: aggregatorPID, loggerPID: loggerPID, coordinatorPID: coorditatorPID})
-
+		context.Send(loggerPID, Message{Content: "All actors are created !", DateTime: time.Now(), Role: "Initializer"})
 	}
 }
 
@@ -125,7 +134,7 @@ func (state *Coordinator) clusterSetup(context actor.Context) *cluster.Cluster {
 	return c
 }
 
-func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO) {
+func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO, context actor.Context) {
 	for {
 		var data DTO
 		data, _ = <-in
@@ -133,7 +142,7 @@ func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO) {
 		if len(state.clientWeights) == 2 {
 			//proveri da li su dva u nizu, ako jesu uradi sta treba, stavi u out i return
 			fmt.Println("obradjuje se fed avg")
-
+			context.Send(state.loggerPID, Message{Content: "Proccesing weights !", DateTime: time.Now(), Role: "Aggregator"})
 			dto1 := state.clientWeights[0]
 			dto2 := state.clientWeights[1]
 
@@ -191,6 +200,7 @@ func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO) {
 				Layer3WeightsMatrix: layer3WeightsMatrix,
 			}
 
+			context.Send(state.loggerPID, Message{Content: "Weights are agregated !", DateTime: time.Now(), Role: "Aggregator"})
 			out <- finalDTO
 			out <- finalDTO
 			return
@@ -217,12 +227,13 @@ func (state *Coordinator) Receive(context actor.Context) {
 
 		state.cluster = state.clusterSetup(context)
 		state.cluster.StartMember()
-		fmt.Println(len(state.finalWeights.Bias1))
+		context.Send(state.loggerPID, Message{Content: "Prowider is set !", DateTime: time.Now(), Role: "Coordinator"})
 
 		context.Send(state.aggregatorPID, chDtos{chIn: state.chIn, chOut: state.chOut})
 
 	case *messages.DTO:
 		fmt.Println("Received client message")
+		context.Send(state.loggerPID, Message{Content: "Received client message !", DateTime: time.Now(), Role: "Coordinator"})
 
 		var layer1WeightsMatrixT [][]float32
 		for i := 0; i < len(msg.Layer1WeightsMatrix); i++ {
@@ -268,6 +279,8 @@ func (state *Coordinator) Receive(context actor.Context) {
 
 		state.chIn <- dto
 
+		context.Send(state.loggerPID, Message{Content: "Client weights sent to agregator !", DateTime: time.Now(), Role: "Coordinator"})
+
 		if len(state.finalWeights.Bias1) == 0 {
 			var data DTO
 			data, _ = <-state.chOut
@@ -310,6 +323,8 @@ func (state *Coordinator) Receive(context actor.Context) {
 			Bias3:               state.finalWeights.Bias3,
 		}
 		context.Respond(response)
+		context.Send(state.loggerPID, Message{Content: "Sent agregated weights to client !", DateTime: time.Now(), Role: "Coordinator"})
+
 	}
 }
 
@@ -322,6 +337,43 @@ func (state *Logger) Receive(context actor.Context) {
 		state.pid = msg.loggerPID
 		state.aggregatorPID = msg.aggregatorPID
 		state.coordinatorPID = msg.coordinatorPID
+
+		/*
+			//creating CSV file
+			file, err := os.Create("loger.csv")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer file.Close()
+
+			writer := csv.NewWriter(file)
+			defer writer.Flush()
+
+			header := []string{"DateTime", "Role", "Content"}
+			err = writer.Write(header)
+			if err != nil {
+				log.Fatal(err)
+			}
+			state.writer = *writer
+		*/
+	case Message:
+		fmt.Println("\nSecam se kao da gledam baka me u crkvu vodi kraj mene ljudi se ljube i vicu hristos se rodi \n\n")
+		file, err := os.OpenFile("loger.csv", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		// Create a CSV writer
+		writer := csv.NewWriter(file)
+		//	defer writer.Flush()
+
+		message := []string{msg.DateTime.Format("2006-01-02 15:04:05"), msg.Role, msg.Content}
+		err = writer.Write(message)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer writer.Flush()
 	}
 }
 
@@ -337,7 +389,7 @@ func (state *Aggregator) Receive(context actor.Context) {
 	case chDtos:
 		state.chIn = msg.chIn
 		state.chOut = msg.chOut
-		go state.Funnel(msg.chIn, msg.chOut)
+		go state.Funnel(msg.chIn, msg.chOut, context)
 	}
 }
 
