@@ -1,0 +1,11 @@
+DateTime,Role,Content
+2023-07-11 16:07:11,Initializer,All actors are created !
+2023-07-11 16:07:12,Coordinator,Prowider is set !
+2023-07-11 16:07:23,Coordinator,Received client message !
+2023-07-11 16:07:23,Coordinator,Client weights sent to agregator !
+2023-07-11 16:07:27,Coordinator,Received client message !
+2023-07-11 16:07:27,Coordinator,Client weights sent to agregator !
+2023-07-11 16:07:27,Aggregator,Proccesing weights !
+2023-07-11 16:07:27,Aggregator,Weights are agregated !
+2023-07-11 16:07:27,Coordinator,Sent agregated weights to client !
+2023-07-11 16:07:27,Coordinator,Sent agregated weights to client !

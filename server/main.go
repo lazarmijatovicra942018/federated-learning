@@ -18,8 +18,8 @@ import (
 
 var sys *actor.ActorSystem = nil
 
-// var ip_addr_E = "192.168.1.9"
-var ip_addr_E = "192.168.0.113"
+// change ip address of computer and turn of firewall
+var ip_addr_E = "192.168.1.5"
 
 type (
 	Initializer struct {
@@ -117,7 +117,6 @@ func newLoggerActor() actor.Actor {
 	return &Logger{}
 }
 
-// change ip address of computer and turn of firewall
 func (state *Coordinator) clusterSetup(context actor.Context) *cluster.Cluster {
 	config := remote.Configure(ip_addr_E, 8080)
 	provider := automanaged.NewWithConfig(1*time.Second, 6331, ip_addr_E+":6331")
@@ -134,13 +133,12 @@ func (state *Coordinator) clusterSetup(context actor.Context) *cluster.Cluster {
 	return c
 }
 
-func (state *Aggregator) Funnel(in <-chan DTO, out chan<- DTO, context actor.Context) {
+func (state *Aggregator) CoordinatorChanels(in <-chan DTO, out chan<- DTO, context actor.Context) {
 	for {
 		var data DTO
 		data, _ = <-in
 		state.clientWeights = append(state.clientWeights, data)
 		if len(state.clientWeights) == 2 {
-			//proveri da li su dva u nizu, ako jesu uradi sta treba, stavi u out i return
 			fmt.Println("obradjuje se fed avg")
 			context.Send(state.loggerPID, Message{Content: "Proccesing weights !", DateTime: time.Now(), Role: "Aggregator"})
 			dto1 := state.clientWeights[0]
@@ -338,24 +336,22 @@ func (state *Logger) Receive(context actor.Context) {
 		state.aggregatorPID = msg.aggregatorPID
 		state.coordinatorPID = msg.coordinatorPID
 
-		/*
-			//creating CSV file
-			file, err := os.Create("loger.csv")
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer file.Close()
+		file, err := os.Create("loger.csv")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
 
-			writer := csv.NewWriter(file)
-			defer writer.Flush()
+		writer := csv.NewWriter(file)
+		defer writer.Flush()
 
-			header := []string{"DateTime", "Role", "Content"}
-			err = writer.Write(header)
-			if err != nil {
-				log.Fatal(err)
-			}
-			state.writer = *writer
-		*/
+		header := []string{"DateTime", "Role", "Content"}
+		err = writer.Write(header)
+		if err != nil {
+			log.Fatal(err)
+		}
+		state.writer = *writer
+
 	case Message:
 		fmt.Println("\nSecam se kao da gledam baka me u crkvu vodi kraj mene ljudi se ljube i vicu hristos se rodi \n\n")
 		file, err := os.OpenFile("loger.csv", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
@@ -364,9 +360,7 @@ func (state *Logger) Receive(context actor.Context) {
 		}
 		defer file.Close()
 
-		// Create a CSV writer
 		writer := csv.NewWriter(file)
-		//	defer writer.Flush()
 
 		message := []string{msg.DateTime.Format("2006-01-02 15:04:05"), msg.Role, msg.Content}
 		err = writer.Write(message)
@@ -389,7 +383,7 @@ func (state *Aggregator) Receive(context actor.Context) {
 	case chDtos:
 		state.chIn = msg.chIn
 		state.chOut = msg.chOut
-		go state.Funnel(msg.chIn, msg.chOut, context)
+		go state.CoordinatorChanels(msg.chIn, msg.chOut, context)
 	}
 }
 
